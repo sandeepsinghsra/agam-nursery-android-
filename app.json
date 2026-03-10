@@ -24,7 +24,9 @@
     "extra": {
       "eas": {
         "projectId": "809ac24f-c395-4b7a-9fad-8e9b317c8c1a"
-      }
+      },
+      "EXPO_PUBLIC_SUPABASE_URL": "https://izqjisdldxocmatbcfzp.supabase.co",
+      "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6cWppc2RsZHhvY21hdGJjZnpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjc2NjUsImV4cCI6MjA4ODY0MzY2NX0.4WiIfotZXF1ciYrt0p4OR9AW1ljbvcEPXLQ8uD87EKM"
     },
     "owner": "pubgalejatt56530"
   }
