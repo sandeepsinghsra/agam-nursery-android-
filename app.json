@@ -23,8 +23,9 @@
     "plugins": ["expo-secure-store"],
     "extra": {
       "eas": {
-        "projectId": "nursery-billing"
+        "projectId": "809ac24f-c395-4b7a-9fad-8e9b317c8c1a"
       }
-    }
+    },
+    "owner": "nursery-billing"
   }
 }
