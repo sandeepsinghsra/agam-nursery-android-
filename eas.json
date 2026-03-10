@@ -7,16 +7,13 @@
     "preview": {
       "android": {
         "buildType": "apk",
-        "image": "latest"
-      },
-      "env": {
-        "KOTLIN_VERSION": "1.9.25"
+        "image": "ubuntu-22.04-jdk-17-ndk-r25c"
       }
     },
     "production": {
       "android": {
         "buildType": "app-bundle",
-        "image": "latest"
+        "image": "ubuntu-22.04-jdk-17-ndk-r25c"
       }
     }
   }
