@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Nursery Billing",
+    "slug": "nursery-billing",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#f0fdf4"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#16a34a"
+      },
+      "package": "com.nurserybilling.app",
+      "versionCode": 1,
+      "permissions": []
+    },
+    "plugins": ["expo-secure-store"],
+    "extra": {
+      "eas": {
+        "projectId": "nursery-billing"
+      }
+    }
+  }
+}
