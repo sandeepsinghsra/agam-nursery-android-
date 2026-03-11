@@ -20,17 +20,22 @@ export default function History() {
   useEffect(() => { fetchBills(); }, []);
 
   const fetchBills = async () => {
-    const { data:{ user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase
-      .from('bills').select('*').eq('user_id', user.id).order('created_at', { ascending:false });
-    if (error) { Alert.alert('Error', error.message); setLoading(false); return; }
-    setBills(data || []);
-    const todayStr = new Date().toDateString();
-    const todayBills = (data||[]).filter(b => new Date(b.created_at).toDateString() === todayStr);
-    const revenue = (data||[]).reduce((s,b) => s+(b.total||0), 0);
-    setStats({ total:data?.length||0, revenue, today:todayBills.length });
-    setLoading(false);
-    setRefreshing(false);
+    try {
+      const { data:{ user } } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from('bills').select('*').eq('user_id', user.id).order('created_at', { ascending:false });
+      if (error) { Alert.alert('Error', error.message); return; }
+      setBills(data || []);
+      const todayStr = new Date().toDateString();
+      const todayBills = (data||[]).filter(b => new Date(b.created_at).toDateString() === todayStr);
+      const revenue = (data||[]).reduce((s,b) => s+(b.total||0), 0);
+      setStats({ total:data?.length||0, revenue, today:todayBills.length });
+    } catch(e) {
+      Alert.alert('Error', 'Data load nahi hua, internet check karo');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
   const onRefresh = useCallback(() => { setRefreshing(true); fetchBills(); }, []);
