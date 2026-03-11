@@ -10,30 +10,34 @@ import * as Sharing from 'expo-sharing';
 const AC = '#16a34a';
 
 export default function NewBill() {
-  const [step, setStep]         = useState(1);
-  const [products, setProducts] = useState([]);
-  const [cust, setCust]         = useState({ name:'', phone:'', address:'' });
-  const [items, setItems]       = useState([]);
-  const [discMode, setDiscMode] = useState('bill');
-  const [billDisc, setBillDisc] = useState('');
-  const [note, setNote]         = useState('');
-  const [saving, setSaving]     = useState(false);
+  const [step, setStep]           = useState(1);
+  const [products, setProducts]   = useState([]);
+  const [cust, setCust]           = useState({ name:'', phone:'', address:'' });
+  const [items, setItems]         = useState([]);
+  const [discMode, setDiscMode]   = useState('bill');
+  const [billDisc, setBillDisc]   = useState('');
+  const [note, setNote]           = useState('');
+  const [saving, setSaving]       = useState(false);
   const [billCount, setBillCount] = useState(0);
   const [previewModal, setPreviewModal] = useState(false);
-  const [lastBill, setLastBill] = useState(null);
+  const [lastBill, setLastBill]   = useState(null);
 
   useEffect(() => { fetchProducts(); fetchBillCount(); }, []);
 
   const fetchProducts = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data } = await supabase.from('products').select('*').eq('user_id', user.id).order('created_at');
-    if (data) setProducts(data);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data } = await supabase.from('products').select('*').eq('user_id', user.id).order('created_at');
+      if (data) setProducts(data);
+    } catch(e) { console.log('fetchProducts error:', e); }
   };
 
   const fetchBillCount = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { count } = await supabase.from('bills').select('*', { count:'exact', head:true }).eq('user_id', user.id);
-    setBillCount(count || 0);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { count } = await supabase.from('bills').select('*', { count:'exact', head:true }).eq('user_id', user.id);
+      setBillCount(count || 0);
+    } catch(e) { console.log('fetchBillCount error:', e); }
   };
 
   const addItem = p => {
@@ -52,25 +56,30 @@ export default function NewBill() {
     if (!cust.name.trim()) { Alert.alert('Error','Customer name required'); return; }
     if (items.length === 0) { Alert.alert('Error','Koi item add karo'); return; }
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    const invoiceId = 'INV-' + String(billCount+1).padStart(3,'0');
-    const bill = {
-      user_id: user.id,
-      invoice_id: invoiceId,
-      customer_name: cust.name,
-      customer_phone: cust.phone,
-      customer_address: cust.address,
-      items: items.map(i => ({...i, itemDisc: Number(i.itemDisc)||0})),
-      disc_mode: discMode,
-      subtotal, total_disc: totalDisc, total, note,
-    };
-    const { data, error } = await supabase.from('bills').insert(bill).select().single();
-    setSaving(false);
-    if (error) { Alert.alert('Error', error.message); return; }
-    setLastBill({ ...data, date: new Date().toLocaleString('en-IN') });
-    setPreviewModal(true);
-    reset();
-    fetchBillCount();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const invoiceId = 'INV-' + String(billCount+1).padStart(3,'0');
+      const bill = {
+        user_id: user.id,
+        invoice_id: invoiceId,
+        customer_name: cust.name,
+        customer_phone: cust.phone,
+        customer_address: cust.address,
+        items: items.map(i => ({...i, itemDisc: Number(i.itemDisc)||0})),
+        disc_mode: discMode,
+        subtotal, total_disc: totalDisc, total, note,
+      };
+      const { data, error } = await supabase.from('bills').insert(bill).select().single();
+      if (error) { Alert.alert('Error', error.message); return; }
+      setLastBill({ ...data, date: new Date().toLocaleString('en-IN') });
+      setPreviewModal(true);
+      reset();
+      fetchBillCount();
+    } catch(e) {
+      Alert.alert('Error', 'Bill save nahi hua, internet check karo');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const reset = () => {
@@ -88,7 +97,7 @@ export default function NewBill() {
 
   const shareWA = (bill) => {
     const lines = bill.items.map(i => `• ${i.name} x${i.qty} = ₹${(i.price-(Number(i.itemDisc)||0))*i.qty}`).join('\n');
-    const txt = `🌱 *Nursery Billing*\n━━━━━━━━━━━━━━\n*${bill.invoice_id}* | ${bill.date}\n━━━━━━━━━━━━━━\n👤 *${bill.customer_name}*\n📞 ${bill.customer_phone}\n━━━━━━━━━━━━━━\n*Items:*\n${lines}\n━━━━━━━━━━━━━━\n*💰 TOTAL: ₹${bill.total}*\n${bill.note?'📝 '+bill.note:''}\n_Thank you! 🌿_`;
+    const txt = `🌱 *Nursery Billing*\n━━━━━━━━━━━━━━\n*${bill.invoice_id}* | ${bill.date}\n━━━━━━━━━━━━━━\n👤 *${bill.customer_name}*\n📞 ${bill.customer_phone||'-'}\n━━━━━━━━━━━━━━\n*Items:*\n${lines}\n━━━━━━━━━━━━━━\n*💰 TOTAL: ₹${bill.total}*\n${bill.note?'📝 '+bill.note:''}\n_Thank you! 🌿_`;
     Sharing.shareAsync(`https://wa.me/?text=${encodeURIComponent(txt)}`);
   };
 
@@ -107,7 +116,7 @@ export default function NewBill() {
         ))}
       </View>
 
-      {/* Step 1: Customer */}
+      {/* Step 1 */}
       {step===1 && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>👤 Customer Details</Text>
@@ -117,19 +126,19 @@ export default function NewBill() {
               <TextInput style={styles.input} value={cust[k]} onChangeText={v=>setCust({...cust,[k]:v})} placeholder={ph} keyboardType={kb}/>
             </View>
           ))}
-          <TouchableOpacity style={styles.btn} onPress={()=>setStep(2)}>
+          <TouchableOpacity style={styles.btn} onPress={()=>{if(!cust.name.trim()){Alert.alert('Error','Customer naam bharo');return;}setStep(2);}}>
             <Text style={styles.btnTxt}>Next: Add Products →</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Step 2: Products */}
+      {/* Step 2 */}
       {step===2 && (
         <View>
           <View style={styles.card}>
             <Text style={styles.cardTitle}>🌿 Select Products</Text>
             {products.length===0
-              ? <Text style={{color:'#aaa',textAlign:'center',padding:16}}>Products tab mein products add karo</Text>
+              ? <Text style={{color:'#aaa',textAlign:'center',padding:16}}>Products tab mein products add karo pehle</Text>
               : <View style={{flexDirection:'row',flexWrap:'wrap',gap:8}}>
                   {products.map(p=>{
                     const inCart=items.find(i=>i.id===p.id);
@@ -149,7 +158,6 @@ export default function NewBill() {
           {items.length>0 && (
             <View style={styles.card}>
               <Text style={styles.cardTitle}>🛒 Cart ({items.length})</Text>
-              {/* Discount mode */}
               <View style={styles.discRow}>
                 {[['bill','📋 On Total'],['item','🌿 Per Product']].map(([k,l])=>(
                   <TouchableOpacity key={k} onPress={()=>setDiscMode(k)}
@@ -214,7 +222,7 @@ export default function NewBill() {
         </View>
       )}
 
-      {/* Step 3: Review */}
+      {/* Step 3 */}
       {step===3 && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>📋 Review & Confirm</Text>
