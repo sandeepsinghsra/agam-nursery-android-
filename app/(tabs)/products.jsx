@@ -20,12 +20,17 @@ export default function Products() {
 
   const fetchProducts = async () => {
     setLoading(true);
-    const { data:{ user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase
-      .from('products').select('*').eq('user_id', user.id).order('created_at', { ascending:false });
-    if (error) Alert.alert('Error', error.message);
-    else setProducts(data || []);
-    setLoading(false);
+    try {
+      const { data:{ user } } = await supabase.auth.getUser();
+      const { data, error } = await supabase
+        .from('products').select('*').eq('user_id', user.id).order('created_at', { ascending:false });
+      if (error) Alert.alert('Error', error.message);
+      else setProducts(data || []);
+    } catch(e) {
+      Alert.alert('Error', 'Data load nahi hua, internet check karo');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const openAdd = () => {
