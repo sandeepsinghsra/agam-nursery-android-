@@ -21,26 +21,31 @@ export default function Settings() {
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
-    const { data:{ user } } = await supabase.auth.getUser();
-    setUser(user);
+    try {
+      const { data:{ user } } = await supabase.auth.getUser();
+      setUser(user);
 
-    const { data: profile } = await supabase
-      .from('profiles').select('*').eq('user_id', user.id).single();
-    if (profile) {
-      setShopName(profile.shop_name||'');
-      setOwnerName(profile.owner_name||'');
-      setPhone(profile.phone||'');
-      setAddress(profile.address||'');
+      const { data: profile } = await supabase
+        .from('profiles').select('*').eq('user_id', user.id).maybeSingle();
+      if (profile) {
+        setShopName(profile.shop_name||'');
+        setOwnerName(profile.owner_name||'');
+        setPhone(profile.phone||'');
+        setAddress(profile.address||'');
+      }
+
+      const [billsRes, prodsRes, billDataRes] = await Promise.all([
+        supabase.from('bills').select('*',{count:'exact',head:true}).eq('user_id',user.id),
+        supabase.from('products').select('*',{count:'exact',head:true}).eq('user_id',user.id),
+        supabase.from('bills').select('total').eq('user_id',user.id),
+      ]);
+      const revenue = (billDataRes.data||[]).reduce((s,b) => s+(b.total||0), 0);
+      setStats({ bills:billsRes.count||0, products:prodsRes.count||0, revenue });
+    } catch(e) {
+      console.log('Settings error:', e);
+    } finally {
+      setLoading(false);
     }
-
-    const [{ count: billCount }, { count: prodCount }, { data: billData }] = await Promise.all([
-      supabase.from('bills').select('*',{count:'exact',head:true}).eq('user_id',user.id),
-      supabase.from('products').select('*',{count:'exact',head:true}).eq('user_id',user.id),
-      supabase.from('bills').select('total').eq('user_id',user.id),
-    ]);
-    const revenue = (billData||[]).reduce((s,b) => s+(b.total||0), 0);
-    setStats({ bills:billCount||0, products:prodCount||0, revenue });
-    setLoading(false);
   };
 
   const saveProfile = async () => {
