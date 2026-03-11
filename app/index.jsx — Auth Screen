@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform
@@ -9,59 +9,53 @@ import { supabase } from '../lib/supabase';
 const AC = '#16a34a';
 
 export default function AuthScreen() {
-  const [mode, setMode]       = useState('login');
-  const [name, setName]       = useState('');
-  const [email, setEmail]     = useState('');
-  const [pass, setPass]       = useState('');
-  const [pass2, setPass2]     = useState('');
-  const [loading, setLoading] = useState(false);
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/(tabs)/newbill');
-      else setChecking(false);
-    });
-  }, []);
+  const [mode, setMode]         = useState('login');
+  const [name, setName]         = useState('');
+  const [email, setEmail]       = useState('');
+  const [pass, setPass]         = useState('');
+  const [pass2, setPass2]       = useState('');
+  const [loading, setLoading]   = useState(false);
 
   const doLogin = async () => {
-    if (!email || !pass) { Alert.alert('Error', 'Email aur password bharo'); return; }
+    if (!email.trim() || !pass.trim()) { Alert.alert('Error', 'Email aur password bharo'); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-    setLoading(false);
-    if (error) Alert.alert('Login Failed', error.message);
-    else router.replace('/(tabs)/newbill');
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: pass });
+      if (error) Alert.alert('Login Failed', error.message);
+      else router.replace('/(tabs)/newbill');
+    } catch(e) {
+      Alert.alert('Error', 'Internet check karo');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const doRegister = async () => {
-    if (!name || !email || !pass || !pass2) { Alert.alert('Error', 'Sab fields bharo'); return; }
+    if (!name.trim() || !email.trim() || !pass || !pass2) { Alert.alert('Error', 'Sab fields bharo'); return; }
     if (pass !== pass2) { Alert.alert('Error', 'Passwords match nahi karte'); return; }
     if (pass.length < 6) { Alert.alert('Error', 'Password min 6 characters'); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email, password: pass,
-      options: { data: { name } }
-    });
-    setLoading(false);
-    if (error) Alert.alert('Register Failed', error.message);
-    else { Alert.alert('✅ Account ban gaya!', 'Ab login karo'); setMode('login'); }
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(), password: pass,
+        options: { data: { name: name.trim() } }
+      });
+      if (error) Alert.alert('Register Failed', error.message);
+      else { Alert.alert('✅ Account ban gaya!', 'Ab login karo'); setMode('login'); }
+    } catch(e) {
+      Alert.alert('Error', 'Internet check karo');
+    } finally {
+      setLoading(false);
+    }
   };
-
-  if (checking) return (
-    <View style={styles.center}>
-      <Text style={styles.logo}>🌱</Text>
-      <ActivityIndicator color={AC} size="large" />
-    </View>
-  );
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
         <Text style={styles.logo}>🌱</Text>
         <Text style={styles.title}>Nursery Billing</Text>
         <Text style={styles.sub}>Aapka data cloud mein safe hai ☁️</Text>
 
-        {/* Tab Toggle */}
         <View style={styles.tabRow}>
           {[['login','🔑 Login'],['register','📝 Register']].map(([k,l]) => (
             <TouchableOpacity key={k} onPress={() => setMode(k)}
@@ -75,7 +69,8 @@ export default function AuthScreen() {
           {mode === 'register' && (
             <View style={styles.field}>
               <Text style={styles.label}>👤 Full Name</Text>
-              <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="Aapka naam" />
+              <TextInput style={styles.input} value={name} onChangeText={setName}
+                placeholder="Aapka naam" autoCapitalize="words" />
             </View>
           )}
           <View style={styles.field}>
@@ -96,15 +91,15 @@ export default function AuthScreen() {
             </View>
           )}
 
-          <TouchableOpacity style={styles.btn} onPress={mode==='login'?doLogin:doRegister} disabled={loading}>
+          <TouchableOpacity style={styles.btn} onPress={mode==='login' ? doLogin : doRegister} disabled={loading}>
             {loading ? <ActivityIndicator color="#fff" /> :
-              <Text style={styles.btnTxt}>{mode==='login'?'🔑 Login':'📝 Account Banao'}</Text>}
+              <Text style={styles.btnTxt}>{mode==='login' ? '🔑 Login' : '📝 Account Banao'}</Text>}
           </TouchableOpacity>
 
           <Text style={styles.switchTxt}>
-            {mode==='login'?'Account nahi hai? ':'Already account hai? '}
-            <Text style={styles.switchLink} onPress={() => setMode(mode==='login'?'register':'login')}>
-              {mode==='login'?'Register karo':'Login karo'}
+            {mode==='login' ? 'Account nahi hai? ' : 'Already account hai? '}
+            <Text style={styles.switchLink} onPress={() => setMode(mode==='login' ? 'register' : 'login')}>
+              {mode==='login' ? 'Register karo' : 'Login karo'}
             </Text>
           </Text>
         </View>
@@ -114,7 +109,6 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  center:       { flex:1, alignItems:'center', justifyContent:'center', background:'#f0fdf4' },
   container:    { flexGrow:1, alignItems:'center', justifyContent:'center', padding:20, backgroundColor:'#f0fdf4' },
   logo:         { fontSize:56, marginBottom:8 },
   title:        { fontSize:26, fontWeight:'900', color:AC, marginBottom:4 },
